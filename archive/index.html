@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>銀河觀星指南 · 過去紀錄</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0a0e23;--ink2:#121736;--line:#2b3568;--star:#f3ecdd;
+    --muted:#99a2cc;--muted2:#6f78a6;--glow:#ffd27a;--aqua:#7fd6c2;--warn:#ff8b6b;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;background:var(--ink);color:var(--star);
+    font-family:"PingFang TC","Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;
+    line-height:1.7;-webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:680px;margin:0 auto;padding:56px 22px 80px;}
+
+  .back{
+    display:inline-flex;align-items:center;gap:8px;margin-bottom:40px;
+    font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--aqua);
+    text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 14px;
+    transition:.15s;
+  }
+  .back:hover{border-color:var(--aqua);background:rgba(127,214,194,.08);}
+
+  .eyebrow{
+    font-family:"IBM Plex Mono",monospace;font-size:11.5px;letter-spacing:.28em;
+    text-transform:uppercase;color:var(--glow);margin:0 0 14px;
+  }
+  h1{
+    font-family:"Fraunces",serif;font-weight:500;font-size:clamp(28px,5vw,42px);
+    line-height:1.1;margin:0 0 8px;
+  }
+  .sub{color:var(--muted);font-size:15px;margin:0 0 44px;}
+
+  /* ---------- TABLE ---------- */
+  .archive-list{border:1px solid var(--line);border-radius:16px;overflow:hidden;}
+  .archive-item{
+    display:grid;grid-template-columns:1fr auto;align-items:center;gap:16px;
+    padding:18px 22px;border-bottom:1px solid var(--line);
+    text-decoration:none;color:inherit;transition:.15s;
+  }
+  .archive-item:last-child{border-bottom:none;}
+  .archive-item:hover{background:rgba(255,210,122,.04);}
+
+  .item-date{
+    font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--glow);
+    margin-bottom:4px;
+  }
+  .item-title{font-size:16px;font-weight:600;color:var(--star);}
+  .item-meta{font-size:13px;color:var(--muted);margin-top:3px;}
+  .item-meta b{color:var(--aqua);}
+
+  .item-arrow{
+    font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted2);
+    white-space:nowrap;
+  }
+
+  footer{
+    margin-top:48px;font-family:"IBM Plex Mono",monospace;
+    font-size:11.5px;color:var(--muted2);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../index.html">← 回今天的指南</a>
+
+  <p class="eyebrow">Taiwan · Milky Way Field Guide</p>
+  <h1>過去觀星紀錄</h1>
+  <p class="sub">每晚依天氣、月相更新的銀河觀星指南存檔。</p>
+
+  <div class="archive-list">
+
+    <a class="archive-item" href="2026-06-15.html">
+      <div>
+        <div class="item-date">2026-06-15 · 星期一</div>
+        <div class="item-title">銀河觀星指南 · 6 月 15 日</div>
+        <div class="item-meta">農曆五月初一 · <b>新月</b> · 整夜無月光 · 最佳條件</div>
+      </div>
+      <div class="item-arrow">查看 ↗</div>
+    </a>
+
+  </div>
+
+  <footer>每次更新後舊版本自動移入此頁。</footer>
+
+</div>
+</body>
+</html>
