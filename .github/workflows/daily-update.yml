@@ -1,0 +1,38 @@
+name: Daily galaxy-guide update
+
+# Free for public repos (unlimited Actions minutes). GitHub-hosted runners have
+# full internet access, so the Open-Meteo weather fetch works here — unlike the
+# previous environment, which couldn't reach the API and froze every day at 55%.
+
+on:
+  schedule:
+    # 09:00 UTC = 17:00 Taiwan time (UTC+8), matching update.py's intended run.
+    # Note: GitHub may delay scheduled runs by a few minutes under load.
+    - cron: "0 9 * * *"
+  workflow_dispatch:   # allow manual "Run workflow" from the Actions tab
+
+# update.py commits index.html + archive/ and pushes back to main.
+permissions:
+  contents: write
+
+# Avoid overlapping runs if a manual trigger coincides with the schedule.
+concurrency:
+  group: daily-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        # persist-credentials (default true) lets update.py's `git push` use
+        # the built-in GITHUB_TOKEN.
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run updater (fetch weather + moon, write page, commit & push)
+        run: python update.py
