@@ -5,6 +5,16 @@ import json, os, subprocess, sys
 from datetime import datetime, timezone, timedelta
 from urllib.request import urlopen
 
+# Logging prints Chinese location/moon names. Windows consoles default to a
+# legacy code page (cp1252) and raise UnicodeEncodeError on the first such
+# print — which can kill this script *after* fetching weather but *before*
+# writing index.html. Force UTF-8 so logging never aborts the run.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 TW = timezone(timedelta(hours=8))
 REF = datetime(2000, 1, 6, 18, 14, tzinfo=timezone.utc)
@@ -37,20 +47,30 @@ NUMS = ["一","二","三","四","五","六","七","八","九","十",
         "十一","十二","十三","十四","十五","十六","十七","十八",
         "十九","二十","廿一","廿二","廿三","廿四","廿五","廿六","廿七","廿八","廿九","三十"]
 
-def fetch_rain(lat, lon):
+# Sentinel returned when the weather API is unreachable. Kept distinct from a
+# real forecast so main() can detect an all-failed run instead of silently
+# publishing a page full of this value (the 2026-06 freeze, where every
+# location read 55% for days because the scheduler had no API access).
+RAIN_FALLBACK = 55
+
+def fetch_rain(lat, lon, attempts=3):
     url = (f"https://api.open-meteo.com/v1/forecast"
            f"?latitude={lat}&longitude={lon}"
            f"&hourly=precipitation_probability"
            f"&timezone=Asia%2FTaipei&forecast_days=2")
-    try:
-        with urlopen(url, timeout=15) as r:
-            data = json.loads(r.read())
-        probs = data["hourly"]["precipitation_probability"]
-        night = probs[21:27]  # 21:00–02:00
-        return round(sum(night) / len(night))
-    except Exception as e:
-        print(f"  Warning: weather fetch failed ({lat},{lon}): {e}", file=sys.stderr)
-        return 55
+    last_err = None
+    for i in range(attempts):
+        try:
+            with urlopen(url, timeout=20) as r:
+                data = json.loads(r.read())
+            probs = data["hourly"]["precipitation_probability"]
+            night = probs[21:27]  # 21:00–02:00
+            return round(sum(night) / len(night))
+        except Exception as e:
+            last_err = e
+    print(f"  Warning: weather fetch failed ({lat},{lon}) after {attempts} tries: {last_err}",
+          file=sys.stderr)
+    return RAIN_FALLBACK
 
 def get_moon(dt):
     days = (dt.astimezone(timezone.utc) - REF).total_seconds() / 86400
@@ -404,6 +424,13 @@ def main():
     for loc in main_locs + rainy_locs:
         loc["rain"] = fetch_rain(loc["lat"], loc["lon"])
         print(f"    {loc['name']}: {loc['rain']}%")
+
+    # If *every* location fell back, the API was unreachable — don't publish a
+    # page of garbage that merely looks refreshed. Abort and keep the last good page.
+    if all(loc["rain"] == RAIN_FALLBACK for loc in main_locs + rainy_locs):
+        print("  ERROR: all weather fetches failed (no API access). "
+              "Aborting without overwriting the published page.", file=sys.stderr)
+        sys.exit(2)
 
     main_locs.sort(key=lambda x: x["rain"])
     rainy_locs.sort(key=lambda x: x["rain"], reverse=True)
