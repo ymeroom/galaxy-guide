@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Auto-updater for galaxy-guide. Run daily at 17:00 Taiwan time."""
 
-import json, os, subprocess, sys
+import json, math, os, subprocess, sys
 from datetime import datetime, timezone, timedelta
 from urllib.request import urlopen
 
@@ -33,15 +33,26 @@ MAIN_LOCS = [
      "desc": "東海岸知名的<b>「海上銀河＋日出」雙拍點</b>，光害低，雲量比墾丁稍高一點。"},
 ]
 
-RAINY_LOCS = [
-    {"name": "阿里山",       "lat": 23.5107, "lon": 120.8031},
-    {"name": "澎湖",         "lat": 23.5654, "lon": 119.6179},
-    {"name": "合歡山鳶峰",   "lat": 24.1417, "lon": 121.2906},
-    {"name": "武陵農場",     "lat": 24.3618, "lon": 121.3950},
-    {"name": "池上 / 鹿野", "lat": 23.0962, "lon": 121.2177},
-    {"name": "蘭嶼",         "lat": 22.0465, "lon": 121.5578},
-    {"name": "小琉球",       "lat": 22.3432, "lon": 120.3781},
+EXTRA_LOCS = [
+    {"name": "合歡山鳶峰",   "region": "南投 · 合歡山",  "lat": 24.1417, "lon": 121.2906, "maps": "24.1417,121.2906",
+     "desc": "台灣第一座國際認證暗空公園的核心觀星點，海拔約 3,000 公尺、<b>大氣透明度全台頂級</b>。夜間低溫且可能有高山反應，保暖與行車安全要留意。"},
+    {"name": "阿里山",       "region": "嘉義 · 阿里山",  "lat": 23.5107, "lon": 120.8031, "maps": "23.5107,120.8031",
+     "desc": "海拔約 2,200 公尺，<b>常在雲海之上</b>、光害低；小笠原山觀景平台視野開闊。夜間氣溫比平地低 10 度以上。"},
+    {"name": "武陵農場",     "region": "台中 · 和平",    "lat": 24.3618, "lon": 121.3950, "maps": "24.3618,121.3950",
+     "desc": "雪山山脈環抱的高山谷地，光害少；<b>適合住宿過夜、順道觀星</b>，留意園區夜間動線管制。"},
+    {"name": "澎湖",         "region": "離島 · 澎湖",    "lat": 23.5654, "lon": 119.6179, "maps": "23.5654,119.6179",
+     "desc": "四面環海、地勢平坦，<b>夏季少了高山雲霧的困擾</b>；找背對市區燈光的南岸海邊即可。"},
+    {"name": "池上 / 鹿野", "region": "台東 · 縱谷",    "lat": 23.0962, "lon": 121.2177, "maps": "23.0962,121.2177",
+     "desc": "縱谷平原視野開闊，光害介於城市與高山之間；<b>伯朗大道、鹿野高台</b>皆可就地仰望。"},
+    {"name": "蘭嶼",         "region": "台東 · 離島",    "lat": 22.0465, "lon": 121.5578, "maps": "22.0465,121.5578",
+     "desc": "<b>全台光害最低的離島之一</b>，面向外海幾乎全黑；氣象站、東清灣都是知名觀星點。需搭船或小飛機前往。"},
+    {"name": "小琉球",       "region": "屏東 · 離島",    "lat": 22.3432, "lon": 120.3781, "maps": "22.3432,120.3781",
+     "desc": "離本島最近的離島選項，<b>南岸背對高雄光害</b>；適合搭配潮間帶行程過夜。"},
 ]
+
+# Unified pool: every location is scored by tonight's actual sky conditions
+# (cloud + rain) — no location is hardcoded as "bad".
+LOCATIONS = MAIN_LOCS + EXTRA_LOCS
 
 NUMS = ["一","二","三","四","五","六","七","八","九","十",
         "十一","十二","十三","十四","十五","十六","十七","十八",
@@ -51,12 +62,16 @@ NUMS = ["一","二","三","四","五","六","七","八","九","十",
 # real forecast so main() can detect an all-failed run instead of silently
 # publishing a page full of this value (the 2026-06 freeze, where every
 # location read 55% for days because the scheduler had no API access).
-RAIN_FALLBACK = 55
+WX_FALLBACK = {"rain": 55, "cloud": 70, "cloud_early": 70, "cloud_late": 70, "failed": True}
 
-def fetch_rain(lat, lon, attempts=3):
+def fetch_weather(lat, lon, attempts=3):
+    """Night-window forecast: rain probability + cloud cover (the metric that
+    actually decides whether stars are visible). All values are 21:00-02:00
+    averages except cloud_early (21-23h) / cloud_late (00-02h), kept separate
+    so the page can flag skies that clear after midnight."""
     url = (f"https://api.open-meteo.com/v1/forecast"
            f"?latitude={lat}&longitude={lon}"
-           f"&hourly=precipitation_probability"
+           f"&hourly=precipitation_probability,cloud_cover"
            f"&timezone=Asia%2FTaipei&forecast_days=2")
     last_err = None
     for i in range(attempts):
@@ -64,13 +79,27 @@ def fetch_rain(lat, lon, attempts=3):
             with urlopen(url, timeout=20) as r:
                 data = json.loads(r.read())
             probs = data["hourly"]["precipitation_probability"]
-            night = probs[21:27]  # 21:00–02:00
-            return round(sum(night) / len(night))
+            clouds = data["hourly"]["cloud_cover"]
+            night_rain = probs[21:27]    # 21:00–02:00
+            night_cloud = clouds[21:27]
+            return {
+                "rain": round(sum(night_rain) / len(night_rain)),
+                "cloud": round(sum(night_cloud) / len(night_cloud)),
+                "cloud_early": round(sum(clouds[21:24]) / 3),  # 21:00–23:00
+                "cloud_late": round(sum(clouds[24:27]) / 3),   # 00:00–02:00
+                "failed": False,
+            }
         except Exception as e:
             last_err = e
     print(f"  Warning: weather fetch failed ({lat},{lon}) after {attempts} tries: {last_err}",
           file=sys.stderr)
-    return RAIN_FALLBACK
+    return dict(WX_FALLBACK)
+
+
+def badness(loc):
+    """Ranking score, lower = better night. Cloud cover dominates: a 10%-rain
+    night under full overcast shows zero stars, so rain is only a tiebreaker."""
+    return 0.7 * loc["cloud"] + 0.3 * loc["rain"]
 
 def get_moon(dt):
     days = (dt.astimezone(timezone.utc) - REF).total_seconds() / 86400
@@ -109,6 +138,112 @@ def get_moon(dt):
                     peak="21–00 時", peak_s="月升前觀賞，前半夜最佳",
                     legend="下弦月前半夜黑暗，把握 21–24 時黃金窗口拍攝銀河。",
                     reminder=f"今晚下弦月（{n}），<b>前半夜黑暗適合觀星</b>，建議把握 21:00–00:00 時間窗口，月升後光害增加。")
+
+
+# ---------------------------------------------------------------------------
+# Galactic-core visibility (season-aware).
+#
+# The Milky Way core (Sgr A*, RA 17h45.7m / Dec −29°) is only in the night sky
+# roughly Feb–Oct from Taiwan; Nov–Jan it sits on the Sun's side and the old
+# hardcoded "rises 21:00, peaks 00–02" copy was wrong for most of the year.
+# Standard low-precision formulas (GMST, solar position) — errors are a few
+# minutes, far below the page's display granularity.
+# ---------------------------------------------------------------------------
+
+CORE_RA_H = 17.7614          # Sgr A* right ascension, hours
+CORE_DEC = -29.008           # declination, degrees
+SIDEREAL_RATE = 1.0027379    # sidereal / solar time rate
+MIN_CORE_ALT = 15            # deg — below this the core is mush in haze/light domes
+REF_LAT, REF_LON = 21.95, 120.85   # Kenting area, the site's primary region
+
+def _days_j2000(dt_utc):
+    return (dt_utc - datetime(2000, 1, 1, 12, tzinfo=timezone.utc)).total_seconds() / 86400.0
+
+def _lst_hours(dt, lon):
+    """Local sidereal time in hours."""
+    d = _days_j2000(dt.astimezone(timezone.utc))
+    gmst = (18.697374558 + 24.06570982441908 * d) % 24
+    return (gmst + lon / 15.0) % 24
+
+def _transit_near(seed, ra_h, lon):
+    """Local time nearest `seed` at which an object of RA `ra_h` crosses the meridian."""
+    t = seed
+    for _ in range(3):
+        delta = ((ra_h - _lst_hours(t, lon) + 12) % 24 - 12) / SIDEREAL_RATE
+        t = t + timedelta(hours=delta)
+    return t
+
+def _alt_az(dt, ra_h, dec, lat, lon):
+    """Altitude/azimuth (degrees; az clockwise from north) of a fixed-RA object."""
+    H = math.radians((((_lst_hours(dt, lon) - ra_h) * 15) + 180) % 360 - 180)
+    la, de = math.radians(lat), math.radians(dec)
+    alt = math.asin(math.sin(la) * math.sin(de) + math.cos(la) * math.cos(de) * math.cos(H))
+    az_s = math.atan2(math.sin(H), math.cos(H) * math.sin(la) - math.tan(de) * math.cos(la))
+    return math.degrees(alt), (math.degrees(az_s) + 180) % 360
+
+def _sun_ra_dec(dt):
+    n = _days_j2000(dt.astimezone(timezone.utc))
+    L = math.radians((280.460 + 0.9856474 * n) % 360)
+    g = math.radians((357.528 + 0.9856003 * n) % 360)
+    lam = L + math.radians(1.915) * math.sin(g) + math.radians(0.020) * math.sin(2 * g)
+    eps = math.radians(23.439 - 0.0000004 * n)
+    dec = math.asin(math.sin(eps) * math.sin(lam))
+    ra = (math.degrees(math.atan2(math.cos(eps) * math.sin(lam), math.cos(lam))) / 15) % 24
+    return ra, math.degrees(dec)
+
+def _sun_alt_crossing(noon_transit, lat, lon, direction):
+    """Time the sun crosses −18° (astronomical twilight). direction=+1 evening, −1 morning."""
+    ra, dec = _sun_ra_dec(noon_transit)
+    la, de = math.radians(lat), math.radians(dec)
+    cos_h = (math.sin(math.radians(-18)) - math.sin(la) * math.sin(de)) / (math.cos(la) * math.cos(de))
+    h_hours = math.degrees(math.acos(max(-1.0, min(1.0, cos_h)))) / 15.0
+    return noon_transit + timedelta(hours=direction * h_hours)
+
+def sun_dark_window(now, lat=REF_LAT, lon=REF_LON):
+    """(astro dusk tonight, astro dawn tomorrow) — the truly dark hours."""
+    noon = now.astimezone(TW).replace(hour=12, minute=0, second=0, microsecond=0)
+    dusk = _sun_alt_crossing(_transit_near(noon, _sun_ra_dec(noon)[0], lon), lat, lon, +1)
+    next_noon = noon + timedelta(days=1)
+    dawn = _sun_alt_crossing(_transit_near(next_noon, _sun_ra_dec(next_noon)[0], lon), lat, lon, -1)
+    return dusk, dawn
+
+def get_core_info(now, lat=REF_LAT, lon=REF_LON):
+    """Tonight's galactic-core observing window, or why there isn't one."""
+    dusk, dawn = sun_dark_window(now, lat, lon)
+    transit = _transit_near(dusk + (dawn - dusk) / 2, CORE_RA_H, lon)
+    transit_alt, _ = _alt_az(transit, CORE_RA_H, CORE_DEC, lat, lon)
+
+    la, de = math.radians(lat), math.radians(CORE_DEC)
+    cos_h = ((math.sin(math.radians(MIN_CORE_ALT)) - math.sin(la) * math.sin(de))
+             / (math.cos(la) * math.cos(de)))
+    half = timedelta(hours=math.degrees(math.acos(max(-1.0, min(1.0, cos_h)))) / 15.0 / SIDEREAL_RATE)
+
+    window_start = max(transit - half, dusk)
+    window_end = min(transit + half, dawn)
+
+    if window_end - window_start < timedelta(minutes=30):
+        return {
+            "visible": False, "dusk": dusk, "dawn": dawn,
+            "reason": ("銀河中心（人馬座方向）每年 11 月至 1 月與太陽同側，整夜不在夜空中，"
+                       "要等 2 月下旬的凌晨才會重新現身東南方低空。冬夜仍可欣賞獵戶座一帶的"
+                       "冬季銀河與獵戶座大星雲。"),
+        }
+
+    peak = min(max(transit, window_start), window_end)
+    peak_alt, peak_az = _alt_az(peak, CORE_RA_H, CORE_DEC, lat, lon)
+    _, az_start = _alt_az(window_start, CORE_RA_H, CORE_DEC, lat, lon)
+
+    return {
+        "visible": True, "dusk": dusk, "dawn": dawn,
+        "transit_local": transit, "transit_alt": round(transit_alt, 1),
+        "window_start": window_start, "window_end": window_end,
+        "peak_local": peak, "peak_alt": round(peak_alt),
+        "dir_start": _az_to_dir(az_start), "dir_peak": _az_to_dir(peak_az),
+    }
+
+def _az_to_dir(az):
+    dirs = ["北", "東北", "東", "東南", "南", "西南", "西", "西北"]
+    return dirs[int((az + 22.5) % 360 // 45)]
 
 
 CSS = """
@@ -226,7 +361,12 @@ CSS = """
     .wrap{max-width:none;padding:0 8px 20px;}}
 """
 
-SVG = """<svg viewBox="0 0 600 210" role="img" aria-label="銀河中心由東南升起至正南最高的弧線">
+def sky_svg(core):
+    """Arc diagram with tonight's computed times — replaces the old hardcoded
+    '21時升起／01–02時最高' labels that were only true in early summer."""
+    ws, pk = core["window_start"], core["peak_local"]
+    mid = ws + (pk - ws) / 2
+    return f"""<svg viewBox="0 0 600 210" role="img" aria-label="銀河中心今晚的高度變化">
         <line x1="30" y1="170" x2="570" y2="170" stroke="#2b3568" stroke-width="1"/>
         <path d="M70 162 C 210 150, 330 70, 470 64" fill="none" stroke="url(#g)" stroke-width="2.5" stroke-linecap="round"/>
         <path d="M470 64 C 510 62, 540 78, 560 96" fill="none" stroke="#3a4480" stroke-width="2" stroke-dasharray="4 5" stroke-linecap="round"/>
@@ -234,13 +374,13 @@ SVG = """<svg viewBox="0 0 600 210" role="img" aria-label="銀河中心由東南
           <stop offset="0" stop-color="#7fd6c2"/><stop offset="1" stop-color="#ffd27a"/>
         </linearGradient></defs>
         <circle cx="78" cy="160" r="5" fill="#7fd6c2"/>
-        <text x="78" y="190" fill="#99a2cc" font-size="12" text-anchor="middle" font-family="IBM Plex Mono,monospace">21時</text>
-        <text x="78" y="146" fill="#cfd6f5" font-size="11" text-anchor="middle">東南升起</text>
+        <text x="78" y="190" fill="#99a2cc" font-size="12" text-anchor="middle" font-family="IBM Plex Mono,monospace">{ws:%H:%M}</text>
+        <text x="78" y="146" fill="#cfd6f5" font-size="11" text-anchor="middle">{core["dir_start"]}方升上 {MIN_CORE_ALT}°</text>
         <circle cx="280" cy="98" r="5" fill="#bfe0d6"/>
-        <text x="280" y="128" fill="#99a2cc" font-size="12" text-anchor="middle" font-family="IBM Plex Mono,monospace">23時</text>
+        <text x="280" y="128" fill="#99a2cc" font-size="12" text-anchor="middle" font-family="IBM Plex Mono,monospace">{mid:%H:%M}</text>
         <circle cx="468" cy="64" r="6.5" fill="#ffd27a"/>
-        <text x="468" y="44" fill="#ffd27a" font-size="12" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-weight="500">01–02時</text>
-        <text x="468" y="92" fill="#f3ecdd" font-size="11" text-anchor="middle">正南 · 最高</text>
+        <text x="468" y="44" fill="#ffd27a" font-size="12" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-weight="500">{pk:%H:%M}</text>
+        <text x="468" y="92" fill="#f3ecdd" font-size="11" text-anchor="middle">{core["dir_peak"]} · 最高 仰角 {core["peak_alt"]}°</text>
         <text x="70" y="200" fill="#6f78a6" font-size="11" text-anchor="middle">東南 SE</text>
         <text x="468" y="200" fill="#6f78a6" font-size="11" text-anchor="middle">南 S</text>
         <text x="560" y="200" fill="#6f78a6" font-size="11" text-anchor="middle">西南 SW</text>
@@ -258,8 +398,12 @@ def meter_color(pct):
 def cards_html(locs):
     out = ""
     for i, loc in enumerate(locs):
-        pct = loc["rain"]
+        cloud, rain = loc["cloud"], loc["rain"]
         best = '<span class="loc-region tag-best">最推薦</span>' if i == 0 else ""
+        clearing = ""
+        if loc.get("cloud_late", 100) <= loc.get("cloud_early", 0) - 15:
+            clearing = ('<span class="loc-region" style="color:var(--aqua);'
+                        'border-color:var(--aqua);">午夜後轉晴</span>')
         out += f"""
     <div class="card">
       <div class="rank">{i+1}</div>
@@ -267,12 +411,13 @@ def cards_html(locs):
         <div class="loc-top">
           <span class="loc-name">{loc["name"]}</span>
           <span class="loc-region">{loc["region"]}</span>
-          {best}
+          {best}{clearing}
         </div>
         <p class="loc-desc">{loc["desc"]}</p>
         <div class="meter-row">
-          <div class="meter"><span style="width:{pct}%;background:{meter_color(pct)}"></span></div>
-          <span class="pct">{pct}% <small>降雨</small></span>
+          <div class="meter"><span style="width:{cloud}%;background:{meter_color(cloud)}"></span></div>
+          <span class="pct">{cloud}% <small>雲量</small></span>
+          <span class="pct" style="font-size:13px;">{rain}% <small>降雨</small></span>
           <a class="nav" href="https://www.google.com/maps/search/?api=1&query={loc['maps']}" target="_blank" rel="noopener">導航 ↗</a>
         </div>
       </div>
@@ -282,11 +427,11 @@ def cards_html(locs):
 
 def chips_html(locs):
     return "\n        ".join(
-        f'<span class="chip">{l["name"]} <b>{l["rain"]}%</b></span>' for l in locs
+        f'<span class="chip">{l["name"]} 雲 <b>{l["cloud"]}%</b> · 雨 {l["rain"]}%</span>' for l in locs
     )
 
 
-def build_page(date_str, weekday, moon, main, rainy, is_archive=False, archive_date=""):
+def build_page(date_str, weekday, moon, core, main, rest, is_archive=False, archive_date=""):
     y, m, d = date_str.split("-")
     date_disp = f"{int(y)} 年 {int(m)} 月 {int(d)} 日（{weekday}）"
     date_title = f"{y}/{m}/{d}"
@@ -307,6 +452,28 @@ def build_page(date_str, weekday, moon, main, rainy, is_archive=False, archive_d
 
     src_note = "自動更新" if not is_archive else "查詢當日"
 
+    if core["visible"]:
+        ws, we, pk = core["window_start"], core["window_end"], core["peak_local"]
+        core_cell_v = f'{core["dir_start"]} → {core["dir_peak"]}'
+        core_cell_s = f'{ws:%H:%M} 升上觀賞高度，{pk:%H:%M} 最高'
+        peak_cell_v = f'{ws:%H:%M}–{we:%H:%M}'
+        core_note = (f'今晚 <b style="color:var(--glow)">{ws:%H:%M}</b> 起銀河中心升上'
+                     f'<b style="color:var(--glow)">{core["dir_start"]}方</b> {MIN_CORE_ALT}° 觀賞高度以上，'
+                     f'{pk:%H:%M} 於{core["dir_peak"]}方最高（仰角約 {core["peak_alt"]}°），'
+                     f'{we:%H:%M} 後降至觀賞高度以下或天色轉亮。')
+        sky_panel = (f'<div class="sky">{sky_svg(core)}\n      '
+                     f'<div class="sky-legend"><span><b>{moon["v"]}</b> {moon["legend"]}</span></div>\n    </div>')
+        dek_core = ""
+    else:
+        core_cell_v = "本季不可見"
+        core_cell_s = "銀心與太陽同側（11–1 月）"
+        peak_cell_v = moon["peak"]
+        core_note = "銀河中心今晚整夜不在夜空中；以下說明何時回歸，冬夜仍有星可看。"
+        sky_panel = ('<div class="sky" style="padding:22px;">'
+                     '<p style="margin:0;color:var(--muted);font-size:14.5px;line-height:1.8;">'
+                     f'<b style="color:var(--warn);">銀河中心本季不可見</b> — {core["reason"]}</p></div>')
+        dek_core = '<b>銀河中心本季不可見</b>（每年 11–1 月），但暗空點仍可觀賞冬季星空。'
+
     return (
         f'<!DOCTYPE html>\n<html lang="zh-Hant">\n<head>\n'
         f'<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n'
@@ -321,31 +488,31 @@ def build_page(date_str, weekday, moon, main, rainy, is_archive=False, archive_d
         '    <div class="hero-inner">\n'
         '      <p class="eyebrow">Taiwan · Milky Way Field Guide</p>\n'
         '      <h1>今晚<span class="zh">銀河</span>觀星指南</h1>\n'
-        f'      <p class="dek">{date_disp} · 21:00 之後｜今晚 <b>{moon["dek"]}。以下 5 個地點依今晚降雨機率由低到高排序。</p>\n'
+        f'      <p class="dek">{date_disp} · 21:00 之後｜今晚 <b>{moon["dek"]}。{dek_core}以下地點依今晚實際觀星條件（雲量＋降雨）排序。</p>\n'
         '      <div class="cond">\n'
         f'        <div><div class="k">月相 · Moon</div><div class="v">{moon["v"]}<small>{moon["small"]}</small></div></div>\n'
-        '        <div><div class="k">銀河中心 · Core</div><div class="v">東南 → 正南<small>21 時東南升起，越晚越高</small></div></div>\n'
-        f'        <div><div class="k">最佳時段 · Peak</div><div class="v">{moon["peak"]}<small>{moon["peak_s"]}</small></div></div>\n'
+        f'        <div><div class="k">銀河中心 · Core</div><div class="v">{core_cell_v}<small>{core_cell_s}</small></div></div>\n'
+        f'        <div><div class="k">最佳時段 · Peak</div><div class="v">{peak_cell_v}<small>{moon["peak_s"]}</small></div></div>\n'
         '      </div>\n    </div>\n  </header>\n\n'
         '  <section>\n    <div class="sec-head"><span class="num">01</span><h2>今晚最有機會的 5 個暗空點</h2></div>\n'
-        '    <p class="sec-note">降雨機率為 Open-Meteo 氣象模式 21:00–02:00 夜間平均值，數字越低越好；點右側可直接導航。</p>\n'
+        '    <p class="sec-note">雲量與降雨為 Open-Meteo 氣象模式 21:00–02:00 夜間平均；排序以雲量為主（權重 70%）、降雨為輔（30%），數字越低越好。點右側可直接導航。</p>\n'
         f'{cards_html(main)}\n  </section>\n\n'
         '  <section>\n    <div class="sec-head"><span class="num">02</span><h2>銀河中心今晚的軌跡</h2></div>\n'
-        '    <p class="sec-note">22:00 後先望<b style="color:var(--glow)">東南方</b>低空，越晚核心越高；午夜後升至正南、仰角最高，最適合拍攝與肉眼觀賞。</p>\n'
-        f'    <div class="sky">{SVG}\n      <div class="sky-legend"><span><b>{moon["v"]}</b> {moon["legend"]}</span></div>\n    </div>\n  </section>\n\n'
-        '  <section>\n    <div class="sec-head"><span class="num">03</span><h2>今晚降雨機率偏高的暗空點</h2></div>\n'
+        f'    <p class="sec-note">{core_note}</p>\n'
+        f'    {sky_panel}\n  </section>\n\n'
+        '  <section>\n    <div class="sec-head"><span class="num">03</span><h2>今晚條件較差的暗空點</h2></div>\n'
         '    <div class="out">\n'
-        '      <p>以下暗空點今晚雲量或降雨偏多，<b style="color:var(--star)">不建議特地前往</b>：</p>\n'
-        f'      <div class="out-grid">{chips_html(rainy)}</div>\n    </div>\n  </section>\n\n'
+        '      <p>以下暗空點今晚的雲量或降雨相對偏高，<b style="color:var(--star)">不建議特地前往</b>：</p>\n'
+        f'      <div class="out-grid">{chips_html(rest)}</div>\n    </div>\n  </section>\n\n'
         '  <section>\n    <div class="sec-head"><span class="num">04</span><h2>出發前的務實提醒</h2></div>\n'
         '    <ul class="notes">\n'
-        '      <li>表中降雨機率為 <b>21:00–02:00 夜間平均值</b>（Open-Meteo 氣象模式），出發前建議再看中央氣象署即時雷達回波確認——夏季對流雨常在午夜後減弱。</li>\n'
+        '      <li>表中雲量與降雨為 <b>21:00–02:00 夜間平均值</b>（Open-Meteo 氣象模式），出發前建議再看中央氣象署即時雷達回波與衛星雲圖確認——夏季對流雨常在午夜後減弱。</li>\n'
         f'      <li>{moon["reminder"]}</li>\n'
-        '      <li>這 5 點從台北出發都約 <b>5–6 小時車程</b>，較適合過夜或本來就在南部。若想找台北當天來回的點，北部近郊今晚同樣多雲且光害偏高，條件並不理想。</li>\n'
+        '      <li>名單涵蓋南部海岸、高山與離島：多數點從台北出發需 <b>4 小時以上車程</b>，較適合過夜行程；高山點（合歡山、阿里山、武陵）入夜低溫、山路請小心，離島需預先安排船班或機位。</li>\n'
         '      <li>海邊與草原風大、夜間轉涼，<b>帶外套、頭燈（紅光不破壞暗視覺）、腳架</b>；注意潮汐與懸崖邊安全。</li>\n'
         '    </ul>\n  </section>\n\n'
         f'  <footer>{archive_link}\n'
-        f'    <div><b>資料來源</b>　天氣：Open-Meteo {src_note}（{date_str} 17:00 TST，夜間 21:00–02:00 平均）｜月相：農曆推算｜座標／導航：Google Maps</div>\n'
+        f'    <div><b>資料來源</b>　天氣：Open-Meteo {src_note}（{date_str} 17:00 TST，雲量・降雨為夜間 21:00–02:00 平均）｜月相：農曆推算｜銀心軌跡：RA 17h45m／Dec −29° 天文計算｜座標／導航：Google Maps</div>\n'
         '    <div><b>提示</b>　可用瀏覽器「列印 → 另存為 PDF」匯出乾淨的列印版本。</div>\n'
         f'    <div style="margin-top:6px;color:#525a85;">{"Archive" if is_archive else "Auto-updated"} for Ian · {date_str}</div>\n'
         '  </footer>\n\n</div>\n</body>\n</html>\n'
@@ -416,31 +583,37 @@ def main():
             update_archive_index(yesterday, yesterday_wd, "（見存檔）")
             print(f"  Archived to archive/{yesterday}.html")
 
-    # Step 2: Fetch weather
+    # Step 2: Fetch weather for the whole pool — every location competes on
+    # tonight's actual conditions instead of a hardcoded main/backup split.
     print("  Fetching weather from Open-Meteo...")
     import copy
-    main_locs = copy.deepcopy(MAIN_LOCS)
-    rainy_locs = copy.deepcopy(RAINY_LOCS)
-    for loc in main_locs + rainy_locs:
-        loc["rain"] = fetch_rain(loc["lat"], loc["lon"])
-        print(f"    {loc['name']}: {loc['rain']}%")
+    locs = copy.deepcopy(LOCATIONS)
+    for loc in locs:
+        loc.update(fetch_weather(loc["lat"], loc["lon"]))
+        print(f"    {loc['name']}: 雲 {loc['cloud']}% / 雨 {loc['rain']}%")
 
     # If *every* location fell back, the API was unreachable — don't publish a
     # page of garbage that merely looks refreshed. Abort and keep the last good page.
-    if all(loc["rain"] == RAIN_FALLBACK for loc in main_locs + rainy_locs):
+    if all(loc["failed"] for loc in locs):
         print("  ERROR: all weather fetches failed (no API access). "
               "Aborting without overwriting the published page.", file=sys.stderr)
         sys.exit(2)
 
-    main_locs.sort(key=lambda x: x["rain"])
-    rainy_locs.sort(key=lambda x: x["rain"], reverse=True)
+    locs.sort(key=badness)
+    main_locs, rest_locs = locs[:5], locs[5:]
 
-    # Step 3: Moon phase
+    # Step 3: Moon phase + galactic-core window
     moon = get_moon(now)
     print(f"  Moon: {moon['v']}")
+    core = get_core_info(now)
+    if core["visible"]:
+        print(f"  Core: {core['window_start']:%H:%M}–{core['window_end']:%H:%M}, "
+              f"peak {core['peak_local']:%H:%M} alt {core['peak_alt']}°")
+    else:
+        print("  Core: not visible this season")
 
     # Step 4: Generate & write index.html
-    html = build_page(today, weekday, moon, main_locs, rainy_locs)
+    html = build_page(today, weekday, moon, core, main_locs, rest_locs)
     index_path = os.path.join(SCRIPT_DIR, "index.html")
     with open(index_path, "w", encoding="utf-8") as f:
         f.write(html)
