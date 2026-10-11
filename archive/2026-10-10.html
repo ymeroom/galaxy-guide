@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>今晚銀河觀星指南 · 2026/10/10</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#0a0e23;--ink2:#121736;--panel:#161c40;--haze:#293266;--line:#2b3568;
+    --star:#f3ecdd;--muted:#99a2cc;--muted2:#6f78a6;--glow:#ffd27a;--glow2:#ffb454;
+    --aqua:#7fd6c2;--warn:#ff8b6b;}
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{margin:0;background:var(--ink);color:var(--star);
+    font-family:"PingFang TC","Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;
+    line-height:1.7;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:880px;margin:0 auto;padding:0 22px 80px;}
+  .archive-banner{background:rgba(43,53,104,.5);border:1px solid var(--line);border-radius:10px;
+    padding:10px 18px;margin:20px 0 0;font-family:"IBM Plex Mono",monospace;font-size:12.5px;
+    color:var(--muted2);display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .archive-banner b{color:var(--muted);}
+  .archive-banner a{color:var(--aqua);text-decoration:none;}
+  .hero{position:relative;margin:0 -22px;padding:64px 22px 52px;overflow:hidden;
+    background:radial-gradient(120% 80% at 78% -10%,rgba(255,180,84,.16),transparent 55%),
+      radial-gradient(90% 120% at 10% 110%,rgba(127,214,194,.10),transparent 50%),
+      linear-gradient(160deg,#0a0e23 0%,#101638 60%,#0a0e23 100%);}
+  .hero .galaxy{position:absolute;inset:0;opacity:.5;pointer-events:none;
+    background:radial-gradient(1px 1px at 20% 30%,#fff,transparent),
+      radial-gradient(1px 1px at 40% 70%,#fff,transparent),
+      radial-gradient(1px 1px at 65% 20%,#fff,transparent),
+      radial-gradient(1px 1px at 80% 55%,#fff,transparent),
+      radial-gradient(1px 1px at 12% 80%,#dfe6ff,transparent),
+      radial-gradient(1.4px 1.4px at 55% 42%,#fff,transparent),
+      radial-gradient(1px 1px at 90% 80%,#cdd6ff,transparent),
+      radial-gradient(1px 1px at 33% 15%,#fff,transparent),
+      radial-gradient(1.6px 1.6px at 72% 78%,#ffe9c2,transparent);}
+  .hero .core{position:absolute;right:-60px;top:-40px;width:340px;height:340px;border-radius:50%;
+    background:radial-gradient(circle,rgba(255,210,122,.22),transparent 62%);
+    filter:blur(6px);pointer-events:none;}
+  .hero-inner{position:relative;}
+  .eyebrow{font-family:"IBM Plex Mono",monospace;font-size:12.5px;letter-spacing:.28em;
+    text-transform:uppercase;color:var(--glow);margin:0 0 18px;}
+  h1{font-family:"Fraunces",serif;font-weight:500;font-size:clamp(34px,6.4vw,58px);
+    line-height:1.05;letter-spacing:-.01em;margin:0 0 6px;}
+  h1 .zh{font-family:"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;font-weight:600;}
+  .dek{color:var(--muted);font-size:16px;max-width:54ch;margin:14px 0 0;}
+  .dek b{color:var(--star);font-weight:600;}
+  .cond{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin:34px 0 0;
+    border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--line);}
+  .cond > div{background:var(--ink2);padding:16px 18px;}
+  .cond .k{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--muted2);margin-bottom:6px;}
+  .cond .v{font-size:16px;font-weight:600;color:var(--star);}
+  .cond .v small{display:block;font-weight:400;font-size:12.5px;color:var(--muted);margin-top:2px;}
+  section{margin-top:54px;}
+  .sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:8px;}
+  .sec-head .num{font-family:"IBM Plex Mono",monospace;color:var(--glow);font-size:13px;}
+  h2{font-family:"Fraunces",serif;font-weight:500;font-size:24px;margin:0;letter-spacing:.005em;}
+  .sec-note{color:var(--muted);font-size:14.5px;margin:2px 0 24px;}
+  .card{border:1px solid var(--line);border-radius:16px;
+    background:linear-gradient(180deg,var(--ink2),#0e1330);
+    padding:22px 22px 20px;margin-bottom:14px;
+    display:grid;grid-template-columns:46px 1fr;gap:18px;align-items:start;}
+  .rank{font-family:"Fraunces",serif;font-size:30px;line-height:1;color:var(--glow);
+    border-right:1px solid var(--line);padding-right:18px;padding-top:2px;}
+  .card-body{min-width:0;}
+  .loc-top{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px;margin-bottom:4px;}
+  .loc-name{font-size:19px;font-weight:700;}
+  .loc-region{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--muted2);
+    letter-spacing:.06em;border:1px solid var(--line);border-radius:999px;padding:2px 9px;}
+  .tag-best{color:var(--ink);background:var(--glow);border:none;font-weight:600;}
+  .loc-desc{color:var(--muted);font-size:14.5px;margin:6px 0 14px;}
+  .loc-desc b{color:var(--star);font-weight:600;}
+  .meter-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .meter{flex:1;min-width:160px;height:8px;border-radius:999px;
+    background:#0a0e26;border:1px solid var(--line);overflow:hidden;}
+  .meter span{display:block;height:100%;border-radius:999px;}
+  .pct{font-family:"IBM Plex Mono",monospace;font-size:15px;font-weight:500;white-space:nowrap;}
+  .pct small{color:var(--muted2);font-weight:400;}
+  .nav{font-family:"IBM Plex Mono",monospace;font-size:12.5px;text-decoration:none;
+    color:var(--aqua);border:1px solid var(--line);border-radius:999px;padding:6px 13px;
+    white-space:nowrap;transition:.15s;}
+  .nav:hover{border-color:var(--aqua);background:rgba(127,214,194,.08);}
+  .sky{border:1px solid var(--line);border-radius:16px;
+    background:linear-gradient(180deg,#0c1130,#0a0e23);padding:22px 18px 14px;}
+  .sky svg{width:100%;height:auto;display:block;}
+  .sky-legend{display:flex;flex-wrap:wrap;gap:8px 22px;justify-content:center;
+    margin-top:8px;font-size:13px;color:var(--muted);}
+  .sky-legend b{color:var(--glow);font-weight:600;}
+  .out{border:1px dashed var(--line);border-radius:14px;padding:18px 20px;
+    background:rgba(255,139,107,.04);}
+  .out p{margin:0 0 12px;color:var(--muted);font-size:14.5px;}
+  .out-grid{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{font-family:"IBM Plex Mono",monospace;font-size:12.5px;border:1px solid var(--line);
+    border-radius:999px;padding:5px 12px;color:var(--muted);}
+  .chip b{color:var(--warn);font-weight:500;}
+  .notes{list-style:none;padding:0;margin:0;}
+  .notes li{position:relative;padding:0 0 14px 26px;color:var(--muted);font-size:14.5px;}
+  .notes li::before{content:"✦";position:absolute;left:0;top:0;color:var(--glow);font-size:13px;}
+  .notes li b{color:var(--star);font-weight:600;}
+  footer{margin-top:56px;padding-top:22px;border-top:1px solid var(--line);
+    font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--muted2);line-height:1.8;}
+  footer b{color:var(--muted);font-weight:500;}
+  @media(max-width:560px){
+    .cond{grid-template-columns:1fr;}
+    .card{grid-template-columns:38px 1fr;gap:14px;padding:18px;}
+    .rank{font-size:24px;padding-right:14px;}}
+  @media print{
+    :root{--star:#1a1a1a;--muted:#3d3d3d;--muted2:#666;--line:#d8d8d8;
+      --ink:#fff;--ink2:#fff;--glow:#b5791a;--aqua:#0b7a66;}
+    body{background:#fff;color:#1a1a1a;}
+    .hero{background:#fff;border-bottom:2px solid #e2e2e2;margin:0;}
+    .hero .galaxy,.hero .core,.archive-banner{display:none;}
+    .eyebrow{color:#b5791a;}
+    .card,.sky,.out,.cond,.cond>div{break-inside:avoid;background:#fff;}
+    .card{border-color:#d8d8d8;}
+    .nav{display:none;}
+    .tag-best{background:#f0d8a8;color:#3a2a00;}
+    a{color:inherit;}
+    .wrap{max-width:none;padding:0 8px 20px;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="galaxy"></div>
+    <div class="core"></div>
+    <div class="hero-inner">
+      <p class="eyebrow">Taiwan · Milky Way Field Guide</p>
+      <h1>今晚<span class="zh">銀河</span>觀星指南</h1>
+      <p class="dek">2026 年 10 月 10 日（六） · 21:00 之後｜今晚 <b>農曆廿九・下弦月</b>，前半夜黑暗，把握 21:00–00:00 的時間窗口。以下地點依今晚實際觀星條件（雲量＋降雨）排序。</p>
+      <div class="cond">
+        <div><div class="k">月相 · Moon</div><div class="v">下弦月（廿九）<small>前半夜黑暗，適合觀星</small></div></div>
+        <div><div class="k">銀河中心 · Core</div><div class="v">西南 → 西南<small>18:50 升上觀賞高度，18:50 最高</small></div></div>
+        <div><div class="k">最佳時段 · Peak</div><div class="v">18:50–20:14<small>月升前觀賞，前半夜最佳</small></div></div>
+      </div>
+    </div>
+  </header>
+
+  <section>
+    <div class="sec-head"><span class="num">01</span><h2>今晚最有機會的 5 個暗空點</h2></div>
+    <p class="sec-note">雲量與降雨為 Open-Meteo 氣象模式 21:00–02:00 夜間平均；排序以雲量為主（權重 70%）、降雨為輔（30%），數字越低越好。點右側可直接導航。</p>
+
+    <div class="card">
+      <div class="rank">1</div>
+      <div class="card-body">
+        <div class="loc-top">
+          <span class="loc-name">澎湖</span>
+          <span class="loc-region">離島 · 澎湖</span>
+          <span class="loc-region tag-best">最推薦</span>
+        </div>
+        <p class="loc-desc">四面環海、地勢平坦，<b>夏季少了高山雲霧的困擾</b>；找背對市區燈光的南岸海邊即可。</p>
+        <div class="meter-row">
+          <div class="meter"><span style="width:0%;background:linear-gradient(90deg,#7fd6c2,#ffd27a)"></span></div>
+          <span class="pct">0% <small>雲量</small></span>
+          <span class="pct" style="font-size:13px;">0% <small>降雨</small></span>
+          <a class="nav" href="https://www.google.com/maps/search/?api=1&query=23.5654,119.6179" target="_blank" rel="noopener">導航 ↗</a>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="rank">2</div>
+      <div class="card-body">
+        <div class="loc-top">
+          <span class="loc-name">阿里山</span>
+          <span class="loc-region">嘉義 · 阿里山</span>
+          
+        </div>
+        <p class="loc-desc">海拔約 2,200 公尺，<b>常在雲海之上</b>、光害低；小笠原山觀景平台視野開闊。夜間氣溫比平地低 10 度以上。</p>
+        <div class="meter-row">
+          <div class="meter"><span style="width:2%;background:linear-gradient(90deg,#7fd6c2,#ffd27a)"></span></div>
+          <span class="pct">2% <small>雲量</small></span>
+          <span class="pct" style="font-size:13px;">0% <small>降雨</small></span>
+          <a class="nav" href="https://www.google.com/maps/search/?api=1&query=23.5107,120.8031" target="_blank" rel="noopener">導航 ↗</a>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="rank">3</div>
+      <div class="card-body">
+        <div class="loc-top">
+          <span class="loc-name">小琉球</span>
+          <span class="loc-region">屏東 · 離島</span>
+          
+        </div>
+        <p class="loc-desc">離本島最近的離島選項，<b>南岸背對高雄光害</b>；適合搭配潮間帶行程過夜。</p>
+        <div class="meter-row">
+          <div class="meter"><span style="width:23%;background:linear-gradient(90deg,#7fd6c2,#ffd27a)"></span></div>
+          <span class="pct">23% <small>雲量</small></span>
+          <span class="pct" style="font-size:13px;">0% <small>降雨</small></span>
+          <a class="nav" href="https://www.google.com/maps/search/?api=1&query=22.3432,120.3781" target="_blank" rel="noopener">導航 ↗</a>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="rank">4</div>
+      <div class="card-body">
+        <div class="loc-top">
+          <span class="loc-name">龍磐公園</span>
+          <span class="loc-region">屏東 · 墾丁</span>
+          
+        </div>
+        <p class="loc-desc">恆春半島東側的隆起珊瑚礁草原，<b>面太平洋、地平線無遮蔽</b>，往東南方正對銀河中心。24 小時開放、光害極低。風很大，記得帶外套、腳架壓重。</p>
+        <div class="meter-row">
+          <div class="meter"><span style="width:19%;background:linear-gradient(90deg,#7fd6c2,#ffd27a)"></span></div>
+          <span class="pct">19% <small>雲量</small></span>
+          <span class="pct" style="font-size:13px;">10% <small>降雨</small></span>
+          <a class="nav" href="https://www.google.com/maps/search/?api=1&query=21.9272,120.8480" target="_blank" rel="noopener">導航 ↗</a>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="rank">5</div>
+      <div class="card-body">
+        <div class="loc-top">
+          <span class="loc-name">社頂自然公園</span>
+          <span class="loc-region">屏東 · 墾丁</span>
+          
+        </div>
+        <p class="loc-desc">園區夜間幾乎無光害。正式步道 17:00 關閉，但<b>停車場周邊草地仍可仰望</b>，離墾丁大街近、補給方便。</p>
+        <div class="meter-row">
+          <div class="meter"><span style="width:19%;background:linear-gradient(90deg,#7fd6c2,#ffd27a)"></span></div>
+          <span class="pct">19% <small>雲量</small></span>
+          <span class="pct" style="font-size:13px;">10% <small>降雨</small></span>
+          <a class="nav" href="https://www.google.com/maps/search/?api=1&query=21.9564,120.8189" target="_blank" rel="noopener">導航 ↗</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="num">02</span><h2>銀河中心今晚的軌跡</h2></div>
+    <p class="sec-note">今晚 <b style="color:var(--glow)">18:50</b> 起銀河中心升上<b style="color:var(--glow)">西南方</b> 15° 觀賞高度以上，18:50 於西南方最高（仰角約 28°），20:14 後降至觀賞高度以下或天色轉亮。</p>
+    <div class="sky"><svg viewBox="0 0 600 210" role="img" aria-label="銀河中心今晚的高度變化">
+        <line x1="30" y1="170" x2="570" y2="170" stroke="#2b3568" stroke-width="1"/>
+        <path d="M70 162 C 210 150, 330 70, 470 64" fill="none" stroke="url(#g)" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M470 64 C 510 62, 540 78, 560 96" fill="none" stroke="#3a4480" stroke-width="2" stroke-dasharray="4 5" stroke-linecap="round"/>
+        <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#7fd6c2"/><stop offset="1" stop-color="#ffd27a"/>
+        </linearGradient></defs>
+        <circle cx="78" cy="160" r="5" fill="#7fd6c2"/>
+        <text x="78" y="190" fill="#99a2cc" font-size="12" text-anchor="middle" font-family="IBM Plex Mono,monospace">18:50</text>
+        <text x="78" y="146" fill="#cfd6f5" font-size="11" text-anchor="middle">西南方升上 15°</text>
+        <circle cx="280" cy="98" r="5" fill="#bfe0d6"/>
+        <text x="280" y="128" fill="#99a2cc" font-size="12" text-anchor="middle" font-family="IBM Plex Mono,monospace">18:50</text>
+        <circle cx="468" cy="64" r="6.5" fill="#ffd27a"/>
+        <text x="468" y="44" fill="#ffd27a" font-size="12" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-weight="500">18:50</text>
+        <text x="468" y="92" fill="#f3ecdd" font-size="11" text-anchor="middle">西南 · 最高 仰角 28°</text>
+        <text x="70" y="200" fill="#6f78a6" font-size="11" text-anchor="middle">東南 SE</text>
+        <text x="468" y="200" fill="#6f78a6" font-size="11" text-anchor="middle">南 S</text>
+        <text x="560" y="200" fill="#6f78a6" font-size="11" text-anchor="middle">西南 SW</text>
+      </svg>
+      <div class="sky-legend"><span><b>下弦月（廿九）</b> 下弦月前半夜黑暗，把握 21–24 時黃金窗口拍攝銀河。</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="num">03</span><h2>今晚條件較差的暗空點</h2></div>
+    <div class="out">
+      <p>以下暗空點今晚的雲量或降雨相對偏高，<b style="color:var(--star)">不建議特地前往</b>：</p>
+      <div class="out-grid"><span class="chip">佳樂水 / 滿州一帶 雲 <b>27%</b> · 雨 10%</span>
+        <span class="chip">合歡山鳶峰 雲 <b>50%</b> · 雨 0%</span>
+        <span class="chip">蘭嶼 雲 <b>41%</b> · 雨 45%</span>
+        <span class="chip">三仙台 雲 <b>70%</b> · 雨 5%</span>
+        <span class="chip">池上 / 鹿野 雲 <b>92%</b> · 雨 5%</span>
+        <span class="chip">華源海灣 雲 <b>89%</b> · 雨 20%</span>
+        <span class="chip">武陵農場 雲 <b>100%</b> · 雨 34%</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="num">04</span><h2>出發前的務實提醒</h2></div>
+    <ul class="notes">
+      <li>表中雲量與降雨為 <b>21:00–02:00 夜間平均值</b>（Open-Meteo 氣象模式），出發前建議再看中央氣象署即時雷達回波與衛星雲圖確認——夏季對流雨常在午夜後減弱。</li>
+      <li>今晚下弦月（廿九），<b>前半夜黑暗適合觀星</b>，建議把握 21:00–00:00 時間窗口，月升後光害增加。</li>
+      <li>名單涵蓋南部海岸、高山與離島：多數點從台北出發需 <b>4 小時以上車程</b>，較適合過夜行程；高山點（合歡山、阿里山、武陵）入夜低溫、山路請小心，離島需預先安排船班或機位。</li>
+      <li>海邊與草原風大、夜間轉涼，<b>帶外套、頭燈（紅光不破壞暗視覺）、腳架</b>；注意潮汐與懸崖邊安全。</li>
+    </ul>
+  </section>
+
+  <footer>
+    <div style="margin-bottom:10px;">
+      <a href="archive/index.html" style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#7fd6c2;text-decoration:none;border:1px solid #2b3568;border-radius:999px;padding:5px 13px;">📁 過去觀星紀錄 Archive ↗</a>
+    </div>
+    <div><b>資料來源</b>　天氣：Open-Meteo 自動更新（2026-10-10 17:00 TST，雲量・降雨為夜間 21:00–02:00 平均）｜月相：農曆推算｜銀心軌跡：RA 17h45m／Dec −29° 天文計算｜座標／導航：Google Maps</div>
+    <div><b>提示</b>　可用瀏覽器「列印 → 另存為 PDF」匯出乾淨的列印版本。</div>
+    <div style="margin-top:6px;color:#525a85;">Auto-updated for Ian · 2026-10-10</div>
+  </footer>
+
+</div>
+</body>
+</html>
